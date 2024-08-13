@@ -26,7 +26,7 @@ public class CameraAdjuster : MonoBehaviour
         // Настраиваем масштаб для стены, пола и ворот
         AdjustScale(floorRenderer, screenWidth, screenHeight / 2); // Пол должен занимать нижнюю половину экрана
         AdjustScale(wallRenderer, screenWidth, screenHeight / 2);  // Стена должна занимать верхнюю половину экрана
-        AdjustScale(goalRenderer, screenWidth / 3, screenHeight / 4); // Масштабируем ворота пропорционально
+        AdjustScale(goalRenderer, screenWidth, screenHeight / 2.5f); // Масштабируем ворота пропорционально
 
         // Позиционируем элементы на экране
         PositionElements(screenHeight);
@@ -40,16 +40,18 @@ public class CameraAdjuster : MonoBehaviour
         renderer.transform.localScale = scale;
     }
 
-    void PositionElements(float screenHeight)
-    {
-        // Позиционирование пола
-        floorRenderer.transform.position = new Vector3(0, -screenHeight / 4, 0);
+void PositionElements(float screenHeight)
+{
+    // Position the floor
+    floorRenderer.transform.position = new Vector3(0, -screenHeight / 4, 0);
 
-        // Позиционирование стены
-        wallRenderer.transform.position = new Vector3(0, screenHeight / 4, 0);
+    // Position the wall
+    wallRenderer.transform.position = new Vector3(0, screenHeight / 4, 0);
 
-        // Позиционирование ворот
-        float goalHeight = goalRenderer.bounds.size.y / 2;
-        goalRenderer.transform.position = new Vector3(0, goalHeight, 0); // Ворота позиционируются по высоте своего размера
-    }
+    // Position the goal and adjust it to be a little bit lower
+    float goalHeight = goalRenderer.bounds.size.y / 2;
+    float goalYOffset = -1.4f; // Adjust this value to move the goal down
+    goalRenderer.transform.position = new Vector3(0, goalHeight + goalYOffset, 0); // Goal is positioned a bit lower
+}
+
 }
