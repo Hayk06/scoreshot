@@ -2,56 +2,54 @@ using UnityEngine;
 
 public class CameraAdjuster : MonoBehaviour
 {
-    public SpriteRenderer backgroundRenderer;
+    public SpriteRenderer wallRenderer;
+    public SpriteRenderer floorRenderer;
+    public SpriteRenderer goalRenderer;
 
     void Start()
     {
-        AdjustCameraToFitBackground();
+        AdjustElementsToScreenSize();
     }
 
-    void AdjustCameraToFitBackground()
+    void AdjustElementsToScreenSize()
     {
-        if (backgroundRenderer == null)
+        if (wallRenderer == null || floorRenderer == null || goalRenderer == null)
         {
-            Debug.LogError("Background Renderer is not assigned!");
+            Debug.LogError("Рендереры стены, пола или ворот не назначены!");
             return;
         }
 
-        // Получаем размеры фона
-        float backgroundWidth = backgroundRenderer.bounds.size.x;
-        float backgroundHeight = backgroundRenderer.bounds.size.y;
-
-        // Получаем соотношение сторон экрана
-        float screenRatio = (float)Screen.width / (float)Screen.height;
-
-        // Получаем соотношение сторон фона
-        float targetRatio = backgroundWidth / backgroundHeight;
-
-        // Если соотношение экрана больше соотношения фона, растягиваем камеру по высоте
-        if (screenRatio >= targetRatio)
-        {
-            Camera.main.orthographicSize = backgroundHeight / 2;
-        }
-        else
-        {
-            // Если соотношение экрана меньше соотношения фона, растягиваем камеру по ширине
-            float differenceInSize = targetRatio / screenRatio;
-            Camera.main.orthographicSize = backgroundHeight / 2 * differenceInSize;
-        }
-
-        // Теперь растягиваем фон, чтобы избежать черных полос
-        StretchBackgroundToFit();
-    }
-
-    void StretchBackgroundToFit()
-    {
-        // Растягиваем фон так, чтобы он занимал всю видимую область камеры
+        // Получаем размеры экрана
         float screenHeight = Camera.main.orthographicSize * 2;
         float screenWidth = screenHeight * Screen.width / Screen.height;
 
-        Vector2 scale = backgroundRenderer.transform.localScale;
-        scale.x = screenWidth / backgroundRenderer.bounds.size.x;
-        scale.y = screenHeight / backgroundRenderer.bounds.size.y;
-        backgroundRenderer.transform.localScale = scale;
+        // Настраиваем масштаб для стены, пола и ворот
+        AdjustScale(floorRenderer, screenWidth, screenHeight / 2); // Пол должен занимать нижнюю половину экрана
+        AdjustScale(wallRenderer, screenWidth, screenHeight / 2);  // Стена должна занимать верхнюю половину экрана
+        AdjustScale(goalRenderer, screenWidth / 3, screenHeight / 4); // Масштабируем ворота пропорционально
+
+        // Позиционируем элементы на экране
+        PositionElements(screenHeight);
+    }
+
+    void AdjustScale(SpriteRenderer renderer, float targetWidth, float targetHeight)
+    {
+        Vector2 scale = renderer.transform.localScale;
+        scale.x = targetWidth / renderer.bounds.size.x;
+        scale.y = targetHeight / renderer.bounds.size.y;
+        renderer.transform.localScale = scale;
+    }
+
+    void PositionElements(float screenHeight)
+    {
+        // Позиционирование пола
+        floorRenderer.transform.position = new Vector3(0, -screenHeight / 4, 0);
+
+        // Позиционирование стены
+        wallRenderer.transform.position = new Vector3(0, screenHeight / 4, 0);
+
+        // Позиционирование ворот
+        float goalHeight = goalRenderer.bounds.size.y / 2;
+        goalRenderer.transform.position = new Vector3(0, goalHeight, 0); // Ворота позиционируются по высоте своего размера
     }
 }

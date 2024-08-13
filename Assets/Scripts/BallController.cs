@@ -13,6 +13,8 @@ public class BallController : MonoBehaviour
     public float movementDuration = 0.7f;
     private Vector3 initialPosition;
     private Vector3 initialScale;
+    public float swipeStartRadius = 5f; // Radius around the ball to detect swipe start
+    private bool isSwipeValid = false; // Flag to determine if swipe is valid
 
     void Start()
     {
@@ -35,38 +37,71 @@ public class BallController : MonoBehaviour
 
     void HandleMouseInput()
     {
-        if (Input.GetMouseButtonDown(0) && !isBallMoving)
+        if (Input.GetMouseButtonDown(0))
         {
-            StartSwipe(Camera.main.ScreenToWorldPoint(Input.mousePosition));
+            Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            mousePosition.z = 0;
+            if (Vector3.Distance(mousePosition, transform.position) <= swipeStartRadius)
+            {
+                StartSwipe(mousePosition);
+                isSwipeValid = true;
+            }
+            else
+            {
+                isSwipeValid = false;
+            }
         }
 
-        if (Input.GetMouseButton(0) && swipePositions.Count > 0)
+        if (Input.GetMouseButton(0) && isSwipeValid)
         {
             ContinueSwipe(Camera.main.ScreenToWorldPoint(Input.mousePosition));
         }
 
-        if (Input.GetMouseButtonUp(0) && swipePositions.Count > 1)
+        if (Input.GetMouseButtonUp(0) && isSwipeValid && swipePositions.Count > 1)
         {
             EndSwipe();
+        }
+        else if (Input.GetMouseButtonUp(0) && !isSwipeValid)
+        {
+            // Reset if swipe is invalid
+            swipePositions.Clear();
+            lineRenderer.positionCount = 0;
         }
     }
 
     void HandleTouchInput()
     {
-        if (Input.touchCount > 0 && !isBallMoving)
+        if (Input.touchCount > 0)
         {
             Touch touch = Input.GetTouch(0);
+            Vector3 touchPosition = Camera.main.ScreenToWorldPoint(touch.position);
+            touchPosition.z = 0;
+
             if (touch.phase == TouchPhase.Began)
             {
-                StartSwipe(Camera.main.ScreenToWorldPoint(touch.position));
+                if (Vector3.Distance(touchPosition, transform.position) <= swipeStartRadius)
+                {
+                    StartSwipe(touchPosition);
+                    isSwipeValid = true;
+                }
+                else
+                {
+                    isSwipeValid = false;
+                }
             }
-            else if (touch.phase == TouchPhase.Moved && swipePositions.Count > 0)
+            else if (touch.phase == TouchPhase.Moved && isSwipeValid)
             {
-                ContinueSwipe(Camera.main.ScreenToWorldPoint(touch.position));
+                ContinueSwipe(touchPosition);
             }
-            else if (touch.phase == TouchPhase.Ended && swipePositions.Count > 1)
+            else if (touch.phase == TouchPhase.Ended && isSwipeValid && swipePositions.Count > 1)
             {
                 EndSwipe();
+            }
+            else if (touch.phase == TouchPhase.Ended && !isSwipeValid)
+            {
+                // Reset if swipe is invalid
+                swipePositions.Clear();
+                lineRenderer.positionCount = 0;
             }
         }
     }
@@ -119,7 +154,7 @@ public class BallController : MonoBehaviour
 
         rb.velocity = Vector2.zero;
         isBallMoving = false;
-        lineRenderer.positionCount = 0; // Удаление линии после завершения движения
+        lineRenderer.positionCount = 0; // Clear line renderer after the swipe action
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -138,19 +173,20 @@ public class BallController : MonoBehaviour
     {
         rb.velocity = Vector2.zero;
         rb.angularVelocity = 0;
-        yield return new WaitForSeconds(0.3f); // Задержка перед возвратом мяча
+        yield return new WaitForSeconds(0.3f); // Delay before resetting ball
 
-        // Возвращаем мяч на начальную позицию
+        // Reset ball to its initial position and scale
         transform.position = initialPosition;
         transform.localScale = initialScale;
         isBallMoving = false;
 
-        lineRenderer.positionCount = 0; // Удаление предыдущей линии
+        lineRenderer.positionCount = 0; // Clear line renderer after goal
     }
 
     private void GameOver()
     {
-        Debug.Log("Игра окончена!");
-        // Остановка игры или рестарт
+        Debug.Log("Game Over!");
+        // Game over handling code
     }
 }
+
